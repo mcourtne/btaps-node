@@ -1,0 +1,18 @@
+{
+  "name": "btaps-node",
+  "description": "Library for Pluggable BTaps-1 bluetooth home automation switch",
+  "author": "mcourtne",
+  "version": "0.0.1",
+  "dependencies": {
+    "bluetooth-serial-port": "^2.1.2",
+    "rsvp": "^3.5.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "sinon": "^2.1.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  }
+}
