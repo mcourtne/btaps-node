@@ -3,7 +3,7 @@ btaps-node
 
 Description
 ___________
-This project is a library for communicating with a `Plugable PS-BTAPS1 Bluetooth Home Automation Switch`_ in Node.js. The work is based on a 'Python library`_ for the same device.
+This project is a library for communicating with a `Plugable PS-BTAPS1 Bluetooth Home Automation Switch`_ in Node.js. The work is based on a `Python library`_ for the same device.
 
 Dependencies
 ____________
