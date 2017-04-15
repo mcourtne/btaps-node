@@ -1,12 +1,12 @@
 btaps-node 
 ==========
 .. image:: https://travis-ci.org/mcourtne/btaps-node.svg?branch=master
-:target: https://travis-ci.org/mcourtne/btaps-node
-.. image:: https://coveralls.io/repos/github/mcourtne/btaps-node/badge.svg?branch=master
-:target: https://coveralls.io/github/mcourtne/btaps-node?branch=master
+   :target: https://travis-ci.org/mcourtne/btaps-node
 
-Description
-___________
+.. image:: https://coveralls.io/repos/github/mcourtne/btaps-node/badge.svg?branch=master
+   :target: https://coveralls.io/github/mcourtne/btaps-node?branch=master
+
+
 This project is a library for communicating with a `Plugable PS-BTAPS1 Bluetooth Home Automation Switch`_ in Node.js. The work is based on a `Python library`_ for the same device.
 
 Dependencies
