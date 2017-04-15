@@ -1,7 +1,9 @@
 btaps-node 
 ==========
 .. image:: https://travis-ci.org/mcourtne/btaps-node.svg?branch=master
-    :target: https://travis-ci.org/mcourtne/btaps-node
+:target: https://travis-ci.org/mcourtne/btaps-node
+.. image:: https://coveralls.io/repos/github/mcourtne/btaps-node/badge.svg?branch=master
+:target: https://coveralls.io/github/mcourtne/btaps-node?branch=master
 
 Description
 ___________
