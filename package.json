@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "blanket": "^1.2.3",
+    "buffer-equal": "^1.0.0",
     "chai": "^3.5.0",
     "coveralls": "^2.13.0",
     "mocha": "^3.2.0",
@@ -16,12 +17,17 @@
     "sinon": "^2.1.0"
   },
   "scripts": {
-    "test": "mocha --require blanket --reporter mocha-lcov-reporter | coveralls"
+    "test": "mocha --require blanket --reporter mocha-lcov-reporter | coveralls",
   },
   "config": {
     "blanket": {
-      "pattern": [""],
-      "data-cover-never": [ "node_modules", "test" ]
+      "pattern": [
+        ""
+      ],
+      "data-cover-never": [
+        "node_modules",
+        "test"
+      ]
     }
   }
 }
