@@ -9,6 +9,24 @@ var BTaps = function(btaddr){
 
 BTaps.prototype = {
 
+    __write: function(payload){
+      var that = this;
+      var write = RSVP.denodeify(this.socket.write.bind(this.socket));
+      var promise = new RSVP.Promise(function(resolve,reject){
+        
+        that.socket.once('data',function(data){
+          resolve(data);
+        });
+        write(payload).then(function(){
+          setTimeout(function() {
+            reject(new Error('Timed out'));
+            }, 1000);
+        },reject);
+      });
+
+      return promise;
+    },
+
     // connect to bluetooth address specified in constructor
     connect: function(){
         
@@ -22,7 +40,7 @@ BTaps.prototype = {
                 that.socket.connect(that.btaddr,channel,function(){
 
                     // listen for disconnect to remove timers                    
-                    that.socket.on('closed',function(){
+                    that.socket.once('closed',function(){
                       that.timers = {};
                       that.enabled = false;
                     });  
@@ -54,7 +72,6 @@ BTaps.prototype = {
     // set the state of the switch (On/Off)
     setSwitch: function(enabled){
         
-            var write = RSVP.denodeify(this.socket.write.bind(this.socket));
             var payload;
 
             if(enabled){
@@ -65,7 +82,23 @@ BTaps.prototype = {
                 payload = new Buffer([0xcc,0xaa,0x03,0x01,0x01,0x00]);
             }
 
-            return write(payload);
+            return this.__write(payload);
+    },
+
+    setDateTimeNow: function(){
+      var now = new Date();
+      var year = dec2badHex(now.getFullYear());
+      var month = dec2badHex(now.getMonth());
+      var day = dec2badHex(now.getDate());
+      var hour = dec2badHex(now.getHours());
+      var minute = dec2badHex(now.getMinutes());
+      var second = dec2badHex(now.getSeconds());
+      var weekday = dec2badHex(now.getDay());
+      var packet = new Buffer([0xcc, 0xaa, 0x09, 0x09, 0x01,
+                              year,month,day,hour,minute,
+                              second,weekday]);
+      
+      return this.__write(packet);      
     },
 
     __setTimer: function(timer,create){
@@ -76,7 +109,6 @@ BTaps.prototype = {
           reject(new Error('Timer argument in '+create?'createTimer()':'modifyTimer()'+'must be a BTapsTimer object.'));
         }
        
-        var write = RSVP.denodeify(that.socket.write);  
         var startTime = timer.getStartTime_badHex();
         var endTime = timer.getEndTime_badHex();
         var createByte;
@@ -87,11 +119,14 @@ BTaps.prototype = {
           createByte = 0x03;
         }
         
-        var packet = new Buffer([0xcc,0xaa,0x1a,createByte,0x01,timer.id,
-                                timer.repeatDayByte, startTime[0], startTime[1],
-                                endTime[0], endTime[1], timer.enabled], 29);
-       
-        write(packet).then(function(){ 
+        var packet = new Buffer(29).fill(0);
+        var tmp = new Buffer([0xcc,0xaa,0x1a,createByte,0x01,timer.id,
+                   timer.repeatDayByte, startTime[0], startTime[1],
+                   endTime[0], endTime[1], timer.enabled]);
+        tmp.copy(packet);       
+        packet.write(timer.name,7);
+
+        that.__write(packet).then(function(){ 
           that.timers[timer.id] = timer;
           resolve();
         },function(reason){
@@ -117,7 +152,6 @@ BTaps.prototype = {
       var that = this;
       var promise = new RSVP.Promise(function(resolve,reject){
         
-        var write = RSVP.denodeify(that.socket.write);
         var timer_id;
         
         if( timer instanceof BTapsTimer ){
@@ -127,7 +161,7 @@ BTaps.prototype = {
         }
         
         var payload = new Buffer([0xcc,0xaa,0x04,0x19,0x01,0x01,timer_id]);
-        write(payload).then(function(){
+        that.__write(payload).then(function(){
           delete that.timers[timer_id];
           resolve();
         },function(reason){
@@ -149,9 +183,10 @@ BTaps.prototype = {
 	var _enabled;
         var firstResponse = true;     
   
-        that.socket.on('data',function(buffer){
+        var onData = function(buffer){
           // we need to buffer the data until 0x00 found
           if(buffer.length == 1 && buffer.readInt8(0) == 0){
+            that.socket.removeListener('data',onData);
             resolve({enabled:_enabled,timers:_timers});
           }else{
             // parse response packet
@@ -174,14 +209,15 @@ BTaps.prototype = {
               _timers[id].repeatDayByte = repeats;
             }
           }
-        });
+        };
 
-        that.socket.write(payload,function(err,byteWritten){
-          if(err){
-            reject(err);
-            }
-          // resolved in response parsing
-        });
+        that.socket.on('data',onData);
+  
+        that.__write(payload).then(function(){
+          setTimeout(function() {
+            reject(new Error('Timed out'));
+          },1000);
+        },reject);
 
       });
 
