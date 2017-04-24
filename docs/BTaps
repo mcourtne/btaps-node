@@ -1,0 +1,175 @@
+================
+Class: ``BTaps``
+================
+
+
+.. contents:: Local Navigation
+   :local:
+
+Children
+========
+
+.. toctree::
+   :maxdepth: 1
+   
+   
+Description
+===========
+
+Represents a PS-BTaps device
+
+
+.. _BTaps.__write:
+
+
+Function: ``__write``
+=====================
+
+Promise wrapper for serial socket's write() method
+
+.. js:function:: __write(payload[, timeout])
+
+    
+    :param Buffer payload: data to send to the device
+    :param Number timeout: amount of time (ms) before returned Promise is rejected
+    :return Promise: resolved to device's response; rejected on timeout or write failure
+    
+.. _BTaps.connect:
+
+
+Function: ``connect``
+=====================
+
+Connect to device
+
+.. js:function:: connect()
+
+    
+    :return Promise: resolves on successful connection; rejected when device not found, serial channel not found on device, write timeout, write failure
+    
+.. _BTaps.disconnect:
+
+
+Function: ``disconnect``
+========================
+
+Disconnect from device
+
+.. js:function:: disconnect()
+
+    
+    
+.. _BTaps.setSwitch:
+
+
+Function: ``setSwitch``
+=======================
+
+Set the state of the switch (On/Off)
+
+.. js:function:: setSwitch(enabled)
+
+    
+    :param Boolean enabled: if true, turn switch On; otherwise, turn it Off
+    :return Promise: resolves to device response Buffer; rejected if socket write fails or response timeout
+    
+.. _BTaps.setDateTimeNow:
+
+
+Function: ``setDateTimeNow``
+============================
+
+Synchronize the device to the current time
+
+.. js:function:: setDateTimeNow()
+
+    
+    :return Promise: resolves to device response Buffer; rejected on write fail or response timeout
+    
+.. _BTaps.__setTimer:
+
+
+Function: ``__setTimer``
+========================
+
+Helper for creating and modifying timers on device
+
+.. js:function:: __setTimer(timer, create)
+
+    
+    :param BTapsTimer timer: timer to set on device
+    :param Boolean create: flag to denote whether the timer should be created or modified
+    :return Promise: resolves to device response; rejected on write fail or response timeout
+    
+.. _BTaps.createTimer:
+
+
+Function: ``createTimer``
+=========================
+
+Create a timer on device
+
+.. js:function:: createTimer(timer)
+
+    
+    :param BTapsTimer timer: timer to set on device
+    :return Promise: resolves to device response; rejected on write fail or response timeout
+    
+.. _BTaps.modifyTimer:
+
+
+Function: ``modifyTimer``
+=========================
+
+Modify an existing device timer
+
+.. js:function:: modifyTimer(timer)
+
+    
+    :param BTapsTimer timer: timer to set on device
+    :return Promise: resolves to device response; rejected on write fail or response timeout
+    
+.. _BTaps.deleteTimer:
+
+
+Function: ``deleteTimer``
+=========================
+
+Delete a timer from device
+
+.. js:function:: deleteTimer(timer)
+
+    
+    :param BTapsTimer|Number timer: timer object or identifier to remove
+    :return Promise: resolves to device response; rejected on write fail or response timeout
+    
+.. _BTaps.getState:
+
+
+Function: ``getState``
+======================
+
+Request timers and enabled state stored on device
+
+.. js:function:: getState()
+
+    
+    :return Promise: resolves to ...; rejected on write fail or response timeout
+    
+.. _BTaps.__updateState:
+
+
+Function: ``__updateState``
+===========================
+
+Set enabled and timers members from response from getState()
+
+.. js:function:: __updateState()
+
+    
+    :return Promise: resolves on successful update; rejected on write fail or response timeout
+    
+
+
+
+

@@ -14,11 +14,17 @@ ____________
  - `bluetooth-serial-port`_
  - `rsvp`_
 
+APIs
+____
+.. toctree::
+   :maxdepth: 1
+
+   BTaps
+   BTapsTimer
+
 TODO
 ____
- - Implement timer class and interface for setting, getting, and updating them
- - Expand test suite
- - Add API documentation
+ - Improve Mocha tests
  - Create an `OpenHAB`_ binding for the Plugable hardware
 
 .. _Plugable PS-BTAPS1 Bluetooth Home Automation Switch: http://plugable.com/products/ps-btaps1/

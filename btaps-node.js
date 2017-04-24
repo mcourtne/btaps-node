@@ -1,15 +1,47 @@
 var RSVP = require('rsvp');
 
+/**
+ * Represents a PS-BTaps device
+ * @constructor BTaps
+ * @param {String} btaddr - Bluetooth address of the device
+ */
 var BTaps = function(btaddr){
+    /**
+     * Serial socket for bluetooth communication
+     * @private
+     * @type {BluetoothSerialPort}
+     */
     this.socket = new (require('bluetooth-serial-port')).BluetoothSerialPort();
-    this.btaddr = btaddr; // bluetooth address
-    this.timers = {};  // array of timer indices
+    
+    /**
+     * Bluetooth address of device provided at construction
+     * @type {String}
+     */
+    this.btaddr = btaddr;
+    
+    /**
+     * Timers on device, empty when disconnected
+     * @type {BTapsTimer[]}
+     */
+    this.timers = {};  
+
+    /**
+     * Current state of the switch, always false when disconnected
+     * @type {Boolean}
+     */
     this.enabled = false;
 };
 
 BTaps.prototype = {
 
-    __write: function(payload){
+    /**
+     * Promise wrapper for serial socket's write() method
+     * @private
+     * @param {Buffer} payload - data to send to the device
+     * @param {Number} [timeout=1000] - amount of time (ms) before returned Promise is rejected
+     * @returns {Promise} resolved to device's response; rejected on timeout or write failure 
+     */
+    __write: function(payload, timeout=1000){
       var that = this;
       var write = RSVP.denodeify(this.socket.write.bind(this.socket));
       var promise = new RSVP.Promise(function(resolve,reject){
@@ -20,15 +52,18 @@ BTaps.prototype = {
         write(payload).then(function(){
           setTimeout(function() {
             reject(new Error('Timed out'));
-            }, 1000);
+            }, timeout);
         },reject);
       });
 
       return promise;
     },
 
-    // connect to bluetooth address specified in constructor
-    connect: function(){
+    /**
+     * Connect to device
+     * @returns {Promise} resolves on successful connection; rejected when device not found, serial channel not found on device, write timeout, write failure 
+     */
+     connect: function(){
         
         // bind promise to BTaps object
         var that = this;
@@ -64,12 +99,18 @@ BTaps.prototype = {
         return promise;
     },
 
-    // disconnect from bluetooth
+    /**
+     * Disconnect from device
+     */
     disconnect: function(){
       this.socket.close();
     },
 
-    // set the state of the switch (On/Off)
+    /**
+     * Set the state of the switch (On/Off)
+     * @param {Boolean} enabled - if true, turn switch On; otherwise, turn it Off
+     * @returns {Promise} resolves to device response Buffer; rejected if socket write fails or response timeout
+     */
     setSwitch: function(enabled){
         
             var payload;
@@ -85,6 +126,10 @@ BTaps.prototype = {
             return this.__write(payload);
     },
 
+    /**
+     * Synchronize the device to the current time
+     * @returns {Promise} resolves to device response Buffer; rejected on write fail or response timeout
+     */
     setDateTimeNow: function(){
       var now = new Date();
       var year = dec2badHex(now.getFullYear());
@@ -101,6 +146,13 @@ BTaps.prototype = {
       return this.__write(packet);      
     },
 
+    /**
+     * Helper for creating and modifying timers on device
+     * @private
+     * @param {BTapsTimer} timer - timer to set on device
+     * @param {Boolean} create - flag to denote whether the timer should be created or modified
+     * @returns {Promise} resolves to device response; rejected on write fail or response timeout 
+     */
     __setTimer: function(timer,create){
       var that = this;
       var promise = new RSVP.Promise(function(resolve,reject){
@@ -109,8 +161,8 @@ BTaps.prototype = {
           reject(new Error('Timer argument in '+create?'createTimer()':'modifyTimer()'+'must be a BTapsTimer object.'));
         }
        
-        var startTime = timer.getStartTime_badHex();
-        var endTime = timer.getEndTime_badHex();
+        var startTime = [dec2badHex(timer.startTime[0]),dec2badHex(timer.startTime[1])];
+        var endTime = [dec2badHex(timer.endTime[0]),dec2badHex(timer.endTime[1])];
         var createByte;
         
         if(create){
@@ -126,9 +178,9 @@ BTaps.prototype = {
         tmp.copy(packet);       
         packet.write(timer.name,7);
 
-        that.__write(packet).then(function(){ 
+        that.__write(packet).then(function(resp){ 
           that.timers[timer.id] = timer;
-          resolve();
+          resolve(resp);
         },function(reason){
           reject(reason);
         });
@@ -138,16 +190,31 @@ BTaps.prototype = {
       return promise;
     },
 
+    /**
+     * Create a timer on device
+     * @param {BTapsTimer} timer - timer to set on device
+     * @returns {Promise} resolves to device response; rejected on write fail or response timeout 
+     */
     createTimer: function(timer){
         // forward promise
         return this.__setTimer(timer,true);
     },
     
+    /**
+     * Modify an existing device timer
+     * @param {BTapsTimer} timer - timer to set on device
+     * @returns {Promise} resolves to device response; rejected on write fail or response timeout 
+     */
     modifyTimer: function(timer){
         // forward promise
         return this.__setTimer(timer,false);
     },
 
+    /**
+     * Delete a timer from device
+     * @param {BTapsTimer|Number} timer - timer object or identifier to remove
+     * @returns {Promise} resolves to device response; rejected on write fail or response timeout
+     */
     deleteTimer: function(timer){
       var that = this;
       var promise = new RSVP.Promise(function(resolve,reject){
@@ -161,9 +228,9 @@ BTaps.prototype = {
         }
         
         var payload = new Buffer([0xcc,0xaa,0x04,0x19,0x01,0x01,timer_id]);
-        that.__write(payload).then(function(){
+        that.__write(payload).then(function(resp){
           delete that.timers[timer_id];
-          resolve();
+          resolve(resp);
         },function(reason){
           reject(reason);
         });
@@ -171,7 +238,10 @@ BTaps.prototype = {
       return promise;
     },
  
-    // method to request timers and enabled state stored on device 
+    /**
+     * Request timers and enabled state stored on device 
+     * @returns {Promise} resolves to ...; rejected on write fail or response timeout
+     */
     getState: function(){
       
       var that = this;
@@ -224,7 +294,11 @@ BTaps.prototype = {
       return promise;
     },
 
-    // set state of BTaps object timers and enabled members with values from connected device
+    /**
+     * Set enabled and timers members from response from getState()
+     * @private
+     * @returns {Promise} resolves on successful update; rejected on write fail or response timeout
+     */
     __updateState: function(){
       var that = this;
       var promise = new RSVP.Promise(function(resolve,reject){
@@ -239,34 +313,71 @@ BTaps.prototype = {
     }
 };
 
-
+/** 
+ * Timer datatype for PS-BTaps1 switch
+ * @constructor BTapsTimer
+ * @param {Number} id - numeric identifier for timer, [0,255]
+ * @param {String} name - text identifier for timer, upto 16 characters
+ * @param {Number[]} startTime - time the switch becomes enabled, [hour,minute]
+ * @param {Number[]} endTime - time the switch becomes disabled, [hour,minute]
+ * @param {Boolean} enabled - timer active flag
+ */
 var BTapsTimer = function(id,name,startTime,endTime,enabled){
-    this.id            = id;         // integer between 0 and 255 (inclusive)
-    this.name          = name;       // string up to 16 characters
-    this.startTime     = startTime;  // 2-tuple: hour,minute
-    this.endTime       = endTime;    // 2-tuple: hour,minute
-    this.enabled       = enabled;    // boolean
-    this.repeatDayByte = 0x00;       // bits 1-7 represent Monday thru Sunday
-                                     // bit 0 always zero 
+    
+    /**
+     * Numeric identifier for timer, [0,255]
+     * @type {Number}
+     */
+    this.id            = id;      
+    
+    /** 
+     * Text identifier for timer, upto 16 characters
+     * @ {String}
+     */
+    this.name          = name;     
+ 
+    /**  
+     * Time the switch becomes enabled, [hour,minute]
+     * @type {Number[]}
+     */
+    this.startTime     = startTime; 
+    
+    /**  
+     * Time the switch becomes disabled, [hour,minute]
+     * @type {Number[]}
+     */
+    this.endTime       = endTime;   
+  
+    /**
+     * Timer active flag
+     * @type {Boolean}
+     */
+    this.enabled       = enabled;    
+    
+    /**
+     * Days on which the timer should be repeated - 8-bit integer, bits 1-7 represent Monday thru Sunday (1=active, 0=inactive), bit 0 is always reserved (value = 0).
+     * @type {Number}
+     */
+    this.repeatDayByte = 0x00;      
 };
 
-BTapsTimer.prototype = {
 
-    getStartTime_badHex: function(){
-        return [dec2badHex(this.startTime[0]),dec2badHex(this.startTime[1])];
-    },
-
-    getEndTime_badHex: function(){
-        return [dec2badHex(this.endTime[0]),dec2badHex(this.endTime[1])];
-    }
-};
-
-/* HELPERS */
-// 10 -> 0x10
+/**
+ *  Helper to convert decimal value to "bad hex" value (10 -> 0x10)
+ *  @private
+ *  @param {Number} dec - decimal value to convert
+ *  @returns {Number} converted value
+ */
 var dec2badHex = function(dec){
     return parseInt('0x'+dec);
 };
-// 0x10 -> 10
+
+/**
+ *  Helper to convert "bad hex" value to decimal (0x10 -> 10)
+ *  @private
+ *  @param {Number} badHex - hex value to convert
+ *  @returns {Number} converted value
+ */
 var badHex2dec = function(badHex){
     return parseInt(badHex.toString(16));
 };

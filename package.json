@@ -12,12 +12,15 @@
     "buffer-equal": "^1.0.0",
     "chai": "^3.5.0",
     "coveralls": "^2.13.0",
+    "jsdoc": "^3.4.3",
+    "jsdoc-sphinx": "0.0.6",
     "mocha": "^3.2.0",
     "mocha-lcov-reporter": "^1.3.0",
     "sinon": "^2.1.0"
   },
   "scripts": {
-    "test": "mocha --require blanket --reporter mocha-lcov-reporter | coveralls"
+    "test": "mocha --require blanket --reporter mocha-lcov-reporter | coveralls",
+    "jsdoc": "jsdoc -t node_modules/jsdoc-sphinx/template -d ./docs btaps-node.js"
   },
   "config": {
     "blanket": {
