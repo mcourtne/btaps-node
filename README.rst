@@ -17,7 +17,7 @@ ____________
 APIs
 ____
  - `BTaps`_
- - 'BTapsTimer`_
+ - `BTapsTimer`_
 
 TODO
 ____
