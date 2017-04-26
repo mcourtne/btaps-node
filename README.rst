@@ -16,11 +16,8 @@ ____________
 
 APIs
 ____
-.. toctree::
-   :maxdepth: 1
-
-   BTaps
-   BTapsTimer
+ - `BTaps`_
+ - 'BTapsTimer`_
 
 TODO
 ____
@@ -32,3 +29,5 @@ ____
 .. _rsvp: https://github.com/tildeio/rsvp.js/
 .. _Python library: https://github.com/bernieplug/plugable-btaps
 .. _OpenHAB: https://www.openhab.org
+.. _BTaps: https://github.com/mcourtne/btaps-node/wiki/Docs#class-btaps
+.. _BTapsTimer: https://github.com/mcourtne/btaps-node/wiki/Docs#class-btapstimer

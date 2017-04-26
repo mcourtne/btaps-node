@@ -1,32 +1,41 @@
+/**
+ * Pluggable BTaps Module
+ * @module btaps-node
+ */
+
 var RSVP = require('rsvp');
 
 /**
  * Represents a PS-BTaps device
- * @constructor BTaps
+ * @class BTaps
  * @param {String} btaddr - Bluetooth address of the device
  */
 var BTaps = function(btaddr){
     /**
      * Serial socket for bluetooth communication
      * @private
+     * @member
      * @type {BluetoothSerialPort}
      */
     this.socket = new (require('bluetooth-serial-port')).BluetoothSerialPort();
     
     /**
      * Bluetooth address of device provided at construction
+     * @member
      * @type {String}
      */
     this.btaddr = btaddr;
     
     /**
      * Timers on device, empty when disconnected
+     * @member
      * @type {BTapsTimer[]}
      */
     this.timers = {};  
 
     /**
      * Current state of the switch, always false when disconnected
+     * @member
      * @type {Boolean}
      */
     this.enabled = false;
@@ -39,7 +48,7 @@ BTaps.prototype = {
      * @private
      * @param {Buffer} payload - data to send to the device
      * @param {Number} [timeout=1000] - amount of time (ms) before returned Promise is rejected
-     * @returns {Promise} resolved to device's response; rejected on timeout or write failure 
+     * @returns {Promise.<Buffer|Error>}
      */
     __write: function(payload, timeout=1000){
       var that = this;
@@ -60,8 +69,8 @@ BTaps.prototype = {
     },
 
     /**
-     * Connect to device
-     * @returns {Promise} resolves on successful connection; rejected when device not found, serial channel not found on device, write timeout, write failure 
+     * Connect to available bluetooth serial port on device
+     * @returns {Promise.<undefined,Error>}
      */
      connect: function(){
         
@@ -109,7 +118,7 @@ BTaps.prototype = {
     /**
      * Set the state of the switch (On/Off)
      * @param {Boolean} enabled - if true, turn switch On; otherwise, turn it Off
-     * @returns {Promise} resolves to device response Buffer; rejected if socket write fails or response timeout
+     * @returns {Promise.<Buffer,Error>}
      */
     setSwitch: function(enabled){
         
@@ -128,7 +137,7 @@ BTaps.prototype = {
 
     /**
      * Synchronize the device to the current time
-     * @returns {Promise} resolves to device response Buffer; rejected on write fail or response timeout
+     * @returns {Promise.<Buffer|Error>}
      */
     setDateTimeNow: function(){
       var now = new Date();
@@ -151,7 +160,7 @@ BTaps.prototype = {
      * @private
      * @param {BTapsTimer} timer - timer to set on device
      * @param {Boolean} create - flag to denote whether the timer should be created or modified
-     * @returns {Promise} resolves to device response; rejected on write fail or response timeout 
+     * @returns {Promise.<Buffer|Error>}
      */
     __setTimer: function(timer,create){
       var that = this;
@@ -193,7 +202,7 @@ BTaps.prototype = {
     /**
      * Create a timer on device
      * @param {BTapsTimer} timer - timer to set on device
-     * @returns {Promise} resolves to device response; rejected on write fail or response timeout 
+     * @returns {Promise.<Buffer|Error>}
      */
     createTimer: function(timer){
         // forward promise
@@ -203,7 +212,7 @@ BTaps.prototype = {
     /**
      * Modify an existing device timer
      * @param {BTapsTimer} timer - timer to set on device
-     * @returns {Promise} resolves to device response; rejected on write fail or response timeout 
+     * @returns {Promise.<Buffer|Error>}
      */
     modifyTimer: function(timer){
         // forward promise
@@ -213,7 +222,7 @@ BTaps.prototype = {
     /**
      * Delete a timer from device
      * @param {BTapsTimer|Number} timer - timer object or identifier to remove
-     * @returns {Promise} resolves to device response; rejected on write fail or response timeout
+     * @returns {Promise.<Buffer|Error>} 
      */
     deleteTimer: function(timer){
       var that = this;
@@ -237,10 +246,10 @@ BTaps.prototype = {
       });
       return promise;
     },
- 
+
     /**
      * Request timers and enabled state stored on device 
-     * @returns {Promise} resolves to ...; rejected on write fail or response timeout
+     * @returns {Promise.<Object|Error>} 
      */
     getState: function(){
       
@@ -297,7 +306,7 @@ BTaps.prototype = {
     /**
      * Set enabled and timers members from response from getState()
      * @private
-     * @returns {Promise} resolves on successful update; rejected on write fail or response timeout
+     * @returns {Promise.<undefined|Error>}
      */
     __updateState: function(){
       var that = this;
@@ -315,7 +324,7 @@ BTaps.prototype = {
 
 /** 
  * Timer datatype for PS-BTaps1 switch
- * @constructor BTapsTimer
+ * @class BTapsTimer
  * @param {Number} id - numeric identifier for timer, [0,255]
  * @param {String} name - text identifier for timer, upto 16 characters
  * @param {Number[]} startTime - time the switch becomes enabled, [hour,minute]
@@ -326,36 +335,42 @@ var BTapsTimer = function(id,name,startTime,endTime,enabled){
     
     /**
      * Numeric identifier for timer, [0,255]
+     * @member
      * @type {Number}
      */
     this.id            = id;      
     
     /** 
      * Text identifier for timer, upto 16 characters
-     * @ {String}
+     * @member
+     * @type {String}
      */
     this.name          = name;     
  
     /**  
      * Time the switch becomes enabled, [hour,minute]
+     * @member
      * @type {Number[]}
      */
     this.startTime     = startTime; 
     
     /**  
      * Time the switch becomes disabled, [hour,minute]
+     * @member
      * @type {Number[]}
      */
     this.endTime       = endTime;   
   
     /**
      * Timer active flag
+     * @member
      * @type {Boolean}
      */
     this.enabled       = enabled;    
     
     /**
      * Days on which the timer should be repeated - 8-bit integer, bits 1-7 represent Monday thru Sunday (1=active, 0=inactive), bit 0 is always reserved (value = 0).
+     * @member
      * @type {Number}
      */
     this.repeatDayByte = 0x00;      
